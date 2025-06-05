@@ -26,3 +26,7 @@ class Program
         Console.WriteLine("All words hidden. Great job!");
     }
 }
+
+// This program exceeds core requirements by hiding only unhidden words,
+// supporting multiple-verse references, and using encapsulation with clean design.
+// All member variables are private and each class handles its own responsibilities.
