@@ -12,13 +12,18 @@ public class BreathingActivity : Activity
     protected override void PerformActivity()
     {
         int time = GetDuration();
+
         while (time > 0)
         {
             Console.Write("\nBreathe in...");
-            Countdown(3);
+            Thread.Sleep(1000); // 1-second delay before countdown
+            Countdown(3);       // Original 3-second inhale (can be adjusted if doubling timing)
+
             Console.Write("Breathe out...");
-            Countdown(3);
-            time -= 6;
+            Thread.Sleep(1000); // 1-second delay before countdown
+            Countdown(3);       // Original 3-second exhale
+
+            time -= 8; // 1 sec prep + 3 sec countdown x 2 = 8 total seconds per cycle
         }
     }
 }
