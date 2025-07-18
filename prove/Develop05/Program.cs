@@ -4,8 +4,9 @@ using System.IO;
 
 class Program
 {
-    static List<Goal> goals = new List<Goal>();
-    static int score = 0;
+    static List<Goal> _goals = new List<Goal>();
+    static int _score = 0;
+
     static void Main(string[] args)
     {
         LoadGoals();
@@ -27,7 +28,7 @@ class Program
 
         while (true)
         {
-            Console.WriteLine($"\nCurrent Score: {score} - Rank: {GetRank(score)}");
+            Console.WriteLine($"\nCurrent Score: {_score} - Rank: {GetRank(_score)}");
             Console.WriteLine("1. Create New Goal");
             Console.WriteLine("2. List Goals");
             Console.WriteLine("3. Record Goal Completion");
@@ -73,42 +74,58 @@ class Program
 
         Console.Write("Name: ");
         string name = Console.ReadLine();
+
         Console.Write("Description: ");
         string desc = Console.ReadLine();
+
         Console.Write("Points: ");
         int points = int.Parse(Console.ReadLine());
 
         switch (type)
         {
-            case "1": goals.Add(new SimpleGoal(name, desc, points)); break;
-            case "2": goals.Add(new EternalGoal(name, desc, points)); break;
+            case "1":
+                _goals.Add(new SimpleGoal(name, desc, points));
+                break;
+            case "2":
+                _goals.Add(new EternalGoal(name, desc, points));
+                break;
             case "3":
                 Console.Write("Times to complete: ");
                 int target = int.Parse(Console.ReadLine());
+
                 Console.Write("Bonus points: ");
                 int bonus = int.Parse(Console.ReadLine());
-                goals.Add(new ChecklistGoal(name, desc, points, target, bonus));
+
+                _goals.Add(new ChecklistGoal(name, desc, points, target, bonus));
                 break;
-            default: Console.WriteLine("Invalid type."); break;
+            default:
+                Console.WriteLine("Invalid type.");
+                break;
         }
     }
 
     static void ListGoals()
     {
-        for (int i = 0; i < goals.Count; i++)
+        for (int i = 0; i < _goals.Count; i++)
         {
-            Console.WriteLine($"{i + 1}. {goals[i].Display()}");
+            Console.WriteLine($"{i + 1}. {_goals[i].Display()}");
         }
     }
 
     static void RecordGoal()
     {
         ListGoals();
+
         Console.Write("Which goal did you complete? ");
         int index = int.Parse(Console.ReadLine()) - 1;
-        if (index >= 0 && index < goals.Count)
+
+        if (index >= 0 && index < _goals.Count)
         {
-            score += goals[index].RecordEvent();
+            _score += _goals[index].RecordEvent();
+        }
+        else
+        {
+            Console.WriteLine("Invalid goal selection.");
         }
     }
 
@@ -116,8 +133,8 @@ class Program
     {
         using (StreamWriter writer = new StreamWriter("goals.txt"))
         {
-            writer.WriteLine(score);
-            foreach (var goal in goals)
+            writer.WriteLine(_score);
+            foreach (var goal in _goals)
             {
                 writer.WriteLine(goal.GetStringRepresentation());
             }
@@ -126,80 +143,16 @@ class Program
 
     static void LoadGoals()
     {
-        if (!File.Exists("goals.txt")) return;
-        goals.Clear();
+        if (!File.Exists("goals.txt"))
+            return;
+
+        _goals.Clear();
         string[] lines = File.ReadAllLines("goals.txt");
-        score = int.Parse(lines[0]);
+        _score = int.Parse(lines[0]);
+
         for (int i = 1; i < lines.Length; i++)
         {
-            goals.Add(GoalFactory.Create(lines[i]));
+            _goals.Add(GoalFactory.Create(lines[i]));
         }
-    }
-}
-
-abstract class Goal
-{
-    public string Name, Description;
-    protected int Points;
-    public Goal(string name, string desc, int points)
-    {
-        Name = name; Description = desc; Points = points;
-    }
-    public abstract int RecordEvent();
-    public abstract string Display();
-    public abstract string GetStringRepresentation();
-}
-
-class SimpleGoal : Goal
-{
-    private bool Completed;
-    public SimpleGoal(string name, string desc, int points, bool completed = false)
-        : base(name, desc, points) { Completed = completed; }
-    public override int RecordEvent() => Completed ? 0 : (Completed = true, Points).Item2;
-    public override string Display() => $"[{(Completed ? "X" : " ")}] {Name} ({Description})";
-    public override string GetStringRepresentation() => $"Simple:{Name},{Description},{Points},{Completed}";
-}
-
-class EternalGoal : Goal
-{
-    public EternalGoal(string name, string desc, int points) : base(name, desc, points) { }
-    public override int RecordEvent() => Points;
-    public override string Display() => $"[∞] {Name} ({Description})";
-    public override string GetStringRepresentation() => $"Eternal:{Name},{Description},{Points}";
-}
-
-class ChecklistGoal : Goal
-{
-    private int Count, Target, Bonus;
-    public ChecklistGoal(string name, string desc, int points, int target, int bonus, int count = 0)
-        : base(name, desc, points) { Target = target; Bonus = bonus; Count = count; }
-    public override int RecordEvent()
-    {
-        if (Count < Target)
-        {
-            Count++;
-            return Count == Target ? Points + Bonus : Points;
-        }
-        return 0;
-    }
-    public override string Display() => $"[{(Count >= Target ? "X" : " ")}] {Name} ({Description}) -- Completed {Count}/{Target}";
-    public override string GetStringRepresentation() => $"Checklist:{Name},{Description},{Points},{Target},{Bonus},{Count}";
-}
-
-static class GoalFactory
-{
-    public static Goal Create(string line)
-    {
-        string[] parts = line.Split(":");
-        string type = parts[0];
-        string[] data = parts[1].Split(",");
-
-        return type switch
-        {
-            "Simple" => new SimpleGoal(data[0], data[1], int.Parse(data[2]), bool.Parse(data[3])),
-            "Eternal" => new EternalGoal(data[0], data[1], int.Parse(data[2])),
-            "Checklist" => new ChecklistGoal(data[0], data[1], int.Parse(data[2]), int.Parse(data[3]), int.Parse(data[4]), int.Parse(data[5])),
-            _ => throw new Exception("Unknown goal type")
-        };
     }
 }
